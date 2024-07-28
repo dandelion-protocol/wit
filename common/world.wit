@@ -1,4 +1,4 @@
-package dandelion:core@0.1.0;
+package dandelion:common@0.1.0;
 
 world imports {
   import errors;
