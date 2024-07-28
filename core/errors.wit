@@ -1,0 +1,6 @@
+interface errors {
+  resource error {
+    constructor(message: string);
+    message: func() -> string;
+  }
+}

@@ -1,0 +1,34 @@
+interface blocks {
+  use errors.{error};
+  use leases.{lease-id};
+
+  enum priority {
+    lowest,
+    low,
+    normal,
+    high,
+  }
+
+  record options {
+    privacy: option<priority>,
+    reliability: option<priority>,
+    timeliness: option<priority>,
+    persistence: option<priority>,
+  }
+
+  type block-hash = list<u8>;
+  type block-data = list<u8>;
+
+  variant block-error {
+    no-such-block,
+    no-such-lease,
+    wrong-hash-size,
+    wrong-data-size,
+    io-error(error),
+  }
+
+  create-block: func(lease: lease-id, data: block-data, opts: options) -> result<block-hash, block-error>;
+  fetch-block: func(lease: lease-id, hash: block-hash, opts: options) -> result<_, block-error>;
+  has-block: func(hash: block-hash) -> result<_, block-error>;
+  read-block: func(hash: block-hash) -> result<block-data, block-error>;
+}

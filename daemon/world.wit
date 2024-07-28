@@ -1,0 +1,7 @@
+package dandelion:daemon@0.1.0;
+
+world daemon-world {
+  include dandelion:core/imports@0.1.0;
+
+  export event-handler;
+}

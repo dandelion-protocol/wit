@@ -1,0 +1,17 @@
+interface leases {
+  use errors.{error};
+  use clocks.{instant};
+
+  type lease-id = u32;
+
+  variant lease-error {
+    no-such-lease,
+    already-expired,
+    io-error(error),
+  }
+
+  create-lease: func(expires-at: instant) -> result<lease-id, lease-error>;
+  expire-lease: func(id: lease-id) -> result<_, lease-error>;
+  extend-lease: func(id: lease-id, expires-at: instant) -> result<_, lease-error>;
+  query-lease: func(id: lease-id) -> result<instant, lease-error>;
+}

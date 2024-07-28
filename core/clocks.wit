@@ -1,0 +1,12 @@
+interface clocks {
+  record duration {
+    seconds: u64,
+    nanoseconds: u32,
+  }
+
+  record instant {
+    since-epoch: duration,
+  }
+
+  now: func() -> instant;
+}

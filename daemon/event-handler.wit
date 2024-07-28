@@ -1,0 +1,9 @@
+interface event-handler {
+  use dandelion:core/errors@0.1.0.{error};
+
+  variant event {
+    no-op,
+  }
+
+  on-event: func(ev: event) -> result<_, error>;
+}
