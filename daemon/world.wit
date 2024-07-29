@@ -1,6 +1,6 @@
 package dandelion:daemon@0.1.0;
 
-world daemon-world {
+world daemon {
   include dandelion:common/imports@0.1.0;
   import timers;
 
