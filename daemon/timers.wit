@@ -1,0 +1,18 @@
+interface timers {
+  record monotonic-duration {
+    nanoseconds: u64,
+  }
+
+  record monotonic-instant {
+    since-epoch: monotonic-duration,
+  }
+
+  type event-id = u32;
+
+  resource timer {
+    constructor(id: event-id, tick-at: monotonic-instant);
+    cancel: func() -> result;
+  }
+
+  now: func() -> monotonic-instant;
+}

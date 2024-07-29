@@ -1,9 +1,15 @@
 interface event-handler {
-  use dandelion:common/errors@0.1.0.{error};
+  use timers.{event-id, monotonic-instant};
 
-  variant event {
-    no-op,
+  record tick-event {
+    id: event-id,
+    now: monotonic-instant,
   }
 
-  on-event: func(ev: event) -> result<_, error>;
+  variant event {
+    load,
+    tick(tick-event),
+  }
+
+  on-event: func(ev: event) -> result;
 }

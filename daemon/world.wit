@@ -2,6 +2,7 @@ package dandelion:daemon@0.1.0;
 
 world daemon-world {
   include dandelion:common/imports@0.1.0;
+  import timers;
 
   export event-handler;
 }
