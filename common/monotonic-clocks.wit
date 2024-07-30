@@ -1,0 +1,6 @@
+interface monotonic-clocks {
+  type monotonic-duration = u64;
+  type monotonic-instant = monotonic-duration;
+
+  now: func() -> monotonic-instant;
+}

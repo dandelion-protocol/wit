@@ -1,12 +1,100 @@
 interface clocks {
   record duration {
-    seconds: u64,
+    seconds: s64,
     nanoseconds: u32,
   }
 
+  duration-add: func(lhs: duration, rhs: duration) -> result<duration, duration>;
+  duration-sub: func(lhs: duration, rhs: duration) -> result<duration, duration>;
+
   record instant {
-    since-epoch: duration,
+    unix-seconds: s64,
+    unix-nanoseconds: u32,
+    tai-seconds-delta: s32,
   }
 
   now: func() -> instant;
+  instant-add: func(lhs: instant, rhs: duration) -> result<instant, instant>;
+  instant-sub: func(lhs: instant, rhs: duration) -> result<instant, instant>;
+  instant-delta: func(lhs: instant, rhs: instant) -> result<duration, duration>;
+
+  variant leap-second-change {
+    add(u8),
+    sub(u8),
+  }
+
+  record leap-second-transition {
+    starts-at: instant,
+    change: leap-second-change,
+  }
+
+  leap-second-transitions: func() -> list<leap-second-transition>;
+
+  enum month {
+    january,
+    february,
+    march,
+    april,
+    may,
+    june,
+    july,
+    august,
+    september,
+    october,
+    november,
+    december,
+  }
+
+  enum day-of-week {
+    monday,
+    tuesday,
+    wednesday,
+    thursday,
+    friday,
+    saturday,
+    sunday,
+    unspecified,
+  }
+
+  record breakdown {
+    year: u16,
+    month: month,
+    day: u8,
+    hour: u8,
+    minute: u8,
+    second: u8,
+    day-of-week: day-of-week,
+    nanosecond: u32,
+    zone-name: string,
+    zone-offset: s32,
+    zone-is-dst: bool,
+  }
+
+  enum encode-error {
+    day-out-of-range,
+    hour-out-of-range,
+    minute-out-of-range,
+    second-out-of-range,
+    nanosecond-out-of-range,
+    day-of-week-mismatch,
+    zone-mismatch,
+  }
+
+  record time-zone-transition {
+    starts-at: instant,
+    name: string,
+    offset: s32,
+    is-dst: bool,
+  }
+
+  resource time-zone {
+    utc: static func() -> time-zone;
+    fixed-offset: static func(name: string, offset: s32, is-dst: bool) -> time-zone;
+    posix-zone: static func(path: string) -> result<time-zone>;
+
+    name: func() -> string;
+    transitions: func() -> list<time-zone-transition>;
+    decode: func(input: instant) -> breakdown;
+    encode: func(input: breakdown) -> result<instant, encode-error>;
+  }
 }

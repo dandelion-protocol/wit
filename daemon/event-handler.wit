@@ -1,15 +1,19 @@
 interface event-handler {
-  use timers.{event-id, monotonic-instant};
+  use dandelion:common/values@0.1.0.{value-map};
+  use timers.{event-id};
+
+  record load-event {
+    configuration: value-map,
+  }
 
   record tick-event {
     id: event-id,
-    now: monotonic-instant,
   }
 
   variant event {
-    load,
+    load(load-event),
     tick(tick-event),
   }
 
-  on-event: func(ev: event) -> result;
+  on-event: func(e: event);
 }

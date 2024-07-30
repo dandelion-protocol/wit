@@ -1,0 +1,114 @@
+interface cryptography {
+  use values.{bytes};
+
+  type twelve-bytes = tuple<u64, u32>;
+  type sixteen-bytes = tuple<u64, u64>;
+  type thirty-two-bytes = tuple<sixteen-bytes, sixteen-bytes>;
+  type sixty-four-bytes = tuple<thirty-two-bytes, thirty-two-bytes>;
+
+  record generic-secret {
+    secret-data: bytes,
+  }
+
+  record cipher-secret {
+    xchacha20-poly1305-key: thirty-two-bytes,
+  }
+
+  record cipher-nonce {
+    xchacha20-poly1305-nonce: twelve-bytes,
+  }
+
+  record cipher-tag {
+    xchacha20-poly1305-tag: sixteen-bytes,
+  }
+
+  record sealing-secret {
+    x25519-secret-key: thirty-two-bytes,
+  }
+
+  record sealing-share {
+    x25519-public-key: thirty-two-bytes,
+  }
+
+  record signing-secret {
+    ed25519-secret-key: thirty-two-bytes,
+  }
+
+  record signing-identity {
+    ed25519-public-key: thirty-two-bytes,
+  }
+
+  record signature {
+    ed25519-signature: sixty-four-bytes,
+  }
+
+  resource HKDF {
+    constructor(secret: generic-secret);
+
+    compute-generic-secret: func(seed: string) -> generic-secret;
+    compute-cipher-secret: func(seed: string) -> cipher-secret;
+    compute-sealing-secret: func(seed: string) -> sealing-secret;
+    compute-signing-secret: func(seed: string) -> signing-secret;
+  }
+
+  resource cipher {
+    constructor(secret: cipher-secret);
+
+    encrypt: func(nonce: cipher-nonce, secret-data: bytes) -> result<tuple<cipher-tag, bytes>>;
+    decrypt: func(nonce: cipher-nonce, cipher-data: bytes, tag: cipher-tag) -> result<bytes>;
+    aead-encrypt: func(nonce: cipher-nonce, associated-data: bytes, secret-data: bytes) -> result<tuple<cipher-tag, bytes>>;
+    aead-decrypt: func(nonce: cipher-nonce, associated-data: bytes, cipher-data: bytes, tag: cipher-tag) -> result<bytes>;
+  }
+
+  resource sealer {
+    constructor(secret: sealing-secret);
+
+    as-share: func() -> sealing-share;
+    compute-shared-secret: func(partner: sealing-share) -> result<generic-secret>;
+  }
+
+  resource signer {
+    constructor(secret: signing-secret);
+
+    as-verifier: func() -> verifier;
+    identity: func() -> signing-identity;
+    sign: func(data: bytes) -> result<signature>;
+    verify: func(data: bytes, sig: signature) -> result;
+  }
+
+  resource verifier {
+    constructor(identity: signing-identity);
+
+    verify: func(data: bytes, sig: signature) -> result;
+  }
+
+  type secret-id = u32;
+
+  resource key-ring {
+    put-generic: func(secret: generic-secret) -> result<secret-id>;
+    get-generic: func(id: secret-id) -> result<generic-secret>;
+    forget-generic: func(id: secret-id) -> result;
+
+    put-HKDF: func(secret: HKDF) -> result<secret-id>;
+    get-HKDF: func(id: secret-id) -> result<HKDF>;
+    forget-HKDF: func(id: secret-id) -> result;
+
+    put-cipher: func(object: cipher) -> result<secret-id>;
+    get-cipher: func(id: secret-id) -> result<cipher>;
+    forget-cipher: func(id: secret-id) -> result;
+
+    put-sealer: func(object: sealer) -> result<secret-id>;
+    get-sealer: func(id: secret-id) -> result<sealer>;
+    forget-sealer: func(id: secret-id) -> result;
+
+    put-signer: func(object: signer) -> result<secret-id>;
+    get-signer: func(id: secret-id) -> result<signer>;
+    forget-signer: func(id: secret-id) -> result;
+  }
+
+  generate-generic-secret: func(len: u32) -> generic-secret;
+  generate-cipher-secret: func() -> cipher-secret;
+  generate-cipher-nonce: func() -> cipher-nonce;
+  generate-sealing-secret: func() -> sealing-secret;
+  generate-signing-secret: func() -> signing-secret;
+}

@@ -1,18 +1,10 @@
 interface timers {
-  record monotonic-duration {
-    nanoseconds: u64,
-  }
-
-  record monotonic-instant {
-    since-epoch: monotonic-duration,
-  }
+  use dandelion:common/monotonic-clocks@0.1.0.{monotonic-duration, monotonic-instant};
 
   type event-id = u32;
 
   resource timer {
-    constructor(id: event-id, tick-at: monotonic-instant);
+    constructor(tick-at: monotonic-instant, id: event-id);
     cancel: func() -> result;
   }
-
-  now: func() -> monotonic-instant;
 }
