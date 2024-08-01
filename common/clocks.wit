@@ -1,34 +1,13 @@
 interface clocks {
-  record duration {
-    seconds: s64,
-    nanoseconds: u32,
-  }
+  use types.{duration, instant};
 
   duration-add: func(lhs: duration, rhs: duration) -> result<duration, duration>;
   duration-sub: func(lhs: duration, rhs: duration) -> result<duration, duration>;
-
-  record instant {
-    unix-seconds: s64,
-    unix-nanoseconds: u32,
-    tai-seconds-delta: s32,
-  }
 
   now: func() -> instant;
   instant-add: func(lhs: instant, rhs: duration) -> result<instant, instant>;
   instant-sub: func(lhs: instant, rhs: duration) -> result<instant, instant>;
   instant-delta: func(lhs: instant, rhs: instant) -> result<duration, duration>;
-
-  variant leap-second-change {
-    add(u8),
-    sub(u8),
-  }
-
-  record leap-second-transition {
-    starts-at: instant,
-    change: leap-second-change,
-  }
-
-  leap-second-transitions: func() -> list<leap-second-transition>;
 
   enum month {
     january,
@@ -80,21 +59,61 @@ interface clocks {
     zone-mismatch,
   }
 
+  resource time-zone {
+    utc: static func() -> time-zone;
+    posix-zone: static func(path: string) -> result<time-zone>;
+    fixed-offset: static func(name: string, offset: s32, is-dst: bool) -> time-zone;
+
+    clone: func() -> time-zone;
+    name: func() -> string;
+    transition-data: func() -> time-zone-transition-data;
+
+    decode: func(input: instant) -> breakdown;
+    encode: func(input: breakdown) -> result<instant, encode-error>;
+  }
+
+  resource time-zone-transition-data {
+    earliest: func() -> time-zone-transition;
+    nearest: func(tai-seconds: s64) -> time-zone-transition;
+    exactly-at: func(tai-seconds: s64) -> option<time-zone-transition>;
+    earliest-after: func(tai-seconds: s64) -> option<time-zone-transition>;
+    earliest-at-or-after: func(tai-seconds: s64) -> option<time-zone-transition>;
+    latest-before: func(tai-seconds: s64) -> option<time-zone-transition>;
+    latest-at-or-before: func(tai-seconds: s64) -> option<time-zone-transition>;
+
+    all: func() -> list<time-zone-transition>;
+    in-range: func(tai-seconds-start-inclusive: s64, tai-seconds-end-exclusive: s64) -> list<time-zone-transition>;
+  }
+
   record time-zone-transition {
-    starts-at: instant,
+    instant-of: instant,
+    instant-one-ns-before: instant,
     name: string,
-    offset: s32,
+    tai-seconds: s64,
+    utc-tai-seconds-delta: s32,
+    utc-offset: s32,
     is-dst: bool,
   }
 
-  resource time-zone {
-    utc: static func() -> time-zone;
-    fixed-offset: static func(name: string, offset: s32, is-dst: bool) -> time-zone;
-    posix-zone: static func(path: string) -> result<time-zone>;
+  resource leap-second-transition-data {
+    constructor();
 
-    name: func() -> string;
-    transitions: func() -> list<time-zone-transition>;
-    decode: func(input: instant) -> breakdown;
-    encode: func(input: breakdown) -> result<instant, encode-error>;
+    earliest: func() -> leap-second-transition;
+    nearest: func(tai-seconds: s64) -> leap-second-transition;
+    exactly-at: func(tai-seconds: s64) -> option<leap-second-transition>;
+    earliest-after: func(tai-seconds: s64) -> option<leap-second-transition>;
+    earliest-at-or-after: func(tai-seconds: s64) -> option<leap-second-transition>;
+    latest-before: func(tai-seconds: s64) -> option<leap-second-transition>;
+    latest-at-or-before: func(tai-seconds: s64) -> option<leap-second-transition>;
+
+    all: func() -> list<leap-second-transition>;
+    in-range: func(tai-seconds-start-inclusive: s64, tai-seconds-end-exclusive: s64) -> list<leap-second-transition>;
+  }
+
+  record leap-second-transition {
+    instant-of: instant,
+    instant-one-ns-before: instant,
+    tai-seconds: s64,
+    utc-tai-seconds-delta-delta: s8,
   }
 }

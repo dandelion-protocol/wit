@@ -1,10 +1,10 @@
 interface leases {
-  use clocks.{instant};
+  use types.{instant};
 
   type lease-id = u32;
 
   create-lease: func(expires-at: instant) -> result<lease-id>;
-  extend-lease: func(id: lease-id, expires-at: instant) -> result;
+  update-lease: func(id: lease-id, expires-at: instant) -> result;
   expire-lease: func(id: lease-id) -> result;
-  lease-expires-at: func(id: lease-id) -> result<instant>;
+  get-lease: func(id: lease-id) -> result<instant>;
 }

@@ -1,10 +1,7 @@
 interface pages {
-  use cryptography.{signing-identity, cipher-secret, cipher-nonce};
+  use types.{blob};
   use leases.{lease-id};
-
-  type ed25519-public-key = list<u8>; // array<u8, 32>
-  type page-hash = list<u8>;          // array<u8, 32>
-  type page-data = list<u8>;          // array<u8, 65536>
+  use cryptography.{digest};
 
   enum priority {
     lowest,
@@ -24,15 +21,13 @@ interface pages {
   }
 
   resource page {
-    create: static func(data: page-data, id: lease-id, opts: storage-options) -> result<page>;
-    retrieve: static func(hash: page-hash, id: lease-id, s-opts: storage-options, t-opts: transfer-options) -> result<page>;
+    create: static func(data: blob, lease: lease-id, s-opts: storage-options) -> result<page>;
+    retrieve: static func(key: borrow<digest>, lease: lease-id, s-opts: storage-options, t-opts: transfer-options) -> result<page>;
 
-    is-ready: func() -> bool;
-    hash: func() -> page-hash;
-    data: func() -> result<page-data>;
-
-    attach-lease: func(lease: lease-id, opts: storage-options) -> result;
-    detach-lease: func(lease: lease-id) -> result;
-    detach-all-leases: func() -> result;
+    clone: func() -> page;
+    key: func() -> digest;
+    lease: func() -> lease-id;
+    has-data: func() -> bool;
+    data: func() -> result<blob>;
   }
 }

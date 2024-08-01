@@ -1,114 +1,149 @@
 interface cryptography {
-  use values.{bytes};
+  use types.{blob, bytes};
+  use leases.{lease-id};
 
-  type twelve-bytes = tuple<u64, u32>;
-  type sixteen-bytes = tuple<u64, u64>;
-  type thirty-two-bytes = tuple<sixteen-bytes, sixteen-bytes>;
-  type sixty-four-bytes = tuple<thirty-two-bytes, thirty-two-bytes>;
+  resource digest {
+    from-raw-bytes: static func(b: bytes) -> result<digest>;
+    from-hex-string: static func(s: string) -> result<digest>;
+    from-base64-string: static func(s: string) -> result<digest>;
 
-  record generic-secret {
-    secret-data: bytes,
+    compute: static func(data: borrow<blob>) -> digest;
+    compute-bytes: static func(data: bytes) -> digest;
+
+    clone: func() -> digest;
+    is-equal-to: func(other: borrow<digest>) -> bool;
+    as-raw-bytes: func() -> bytes;
+    as-hex-string: func() -> string;
+    as-base64-string: func() -> string;
   }
 
-  record cipher-secret {
-    xchacha20-poly1305-key: thirty-two-bytes,
+  resource signature {
+    from-raw-bytes: static func(b: bytes) -> result<signature>;
+    from-hex-string: static func(s: string) -> result<signature>;
+    from-base64-string: static func(s: string) -> result<signature>;
+
+    clone: func() -> signature;
+    is-equal-to: func(other: borrow<signature>) -> bool;
+    as-raw-bytes: func() -> bytes;
+    as-hex-string: func() -> string;
+    as-base64-string: func() -> string;
   }
 
-  record cipher-nonce {
-    xchacha20-poly1305-nonce: twelve-bytes,
+  resource cipher-nonce {
+    from-raw-bytes: static func(b: bytes) -> result<cipher-nonce>;
+    from-hex-string: static func(s: string) -> result<cipher-nonce>;
+    from-base64-string: static func(s: string) -> result<cipher-nonce>;
+
+    from-parts: func(channel-id: u32, counter: u64) -> cipher-nonce;
+    from-random: static func() -> cipher-nonce;
+
+    clone: func() -> cipher-nonce;
+    is-equal-to: func(other: borrow<cipher-nonce>) -> bool;
+    as-raw-bytes: func() -> bytes;
+    as-hex-string: func() -> string;
+    as-base64-string: func() -> string;
+
+    as-parts: func() -> tuple<u32, u64>;
   }
 
-  record cipher-tag {
-    xchacha20-poly1305-tag: sixteen-bytes,
+  resource cipher-tag {
+    from-raw-bytes: static func(b: bytes) -> result<cipher-tag>;
+    from-hex-string: static func(s: string) -> result<cipher-tag>;
+    from-base64-string: static func(s: string) -> result<cipher-tag>;
+
+    clone: func() -> cipher-tag;
+    is-equal-to: func(other: borrow<cipher-tag>) -> bool;
+    as-raw-bytes: func() -> bytes;
+    as-hex-string: func() -> string;
+    as-base64-string: func() -> string;
   }
 
-  record sealing-secret {
-    x25519-secret-key: thirty-two-bytes,
+  resource sealing-share {
+    from-raw-bytes: static func(b: bytes) -> result<sealing-share>;
+    from-hex-string: static func(s: string) -> result<sealing-share>;
+    from-base64-string: static func(s: string) -> result<sealing-share>;
+
+    clone: func() -> sealing-share;
+    is-equal-to: func(other: borrow<sealing-share>) -> bool;
+    as-raw-bytes: func() -> bytes;
+    as-hex-string: func() -> string;
+    as-base64-string: func() -> string;
   }
 
-  record sealing-share {
-    x25519-public-key: thirty-two-bytes,
+  resource signing-identity {
+    from-raw-bytes: static func(b: bytes) -> result<signing-identity>;
+    from-hex-string: static func(s: string) -> result<signing-identity>;
+    from-base64-string: static func(s: string) -> result<signing-identity>;
+
+    clone: func() -> signing-identity;
+    is-equal-to: func(other: borrow<signing-identity>) -> bool;
+    as-raw-bytes: func() -> bytes;
+    as-hex-string: func() -> string;
+    as-base64-string: func() -> string;
+
+    verify: func(data: blob, sig: borrow<signature>) -> result<blob>;
   }
 
-  record signing-secret {
-    ed25519-secret-key: thirty-two-bytes,
+  resource generic-secret {
+    from-random: static func() -> generic-secret;
+    from-raw-bytes: static func(b: bytes) -> result<generic-secret>;
+
+    clone: func() -> generic-secret;
+
+    derive-generic-secret: func(seed: string) -> generic-secret;
+    derive-cipher-secret: func(seed: string) -> cipher-secret;
+    derive-sealing-secret: func(seed: string) -> sealing-secret;
+    derive-signing-secret: func(seed: string) -> signing-secret;
   }
 
-  record signing-identity {
-    ed25519-public-key: thirty-two-bytes,
+  resource cipher-secret {
+    from-random: static func() -> cipher-secret;
+    from-raw-bytes: static func(b: bytes) -> result<cipher-secret>;
+
+    clone: func() -> cipher-secret;
+
+    encrypt: func(plain-data: blob, associated-data: option<blob>, nonce: borrow<cipher-nonce>) -> result<tuple<blob, option<blob>, cipher-tag>>;
+    decrypt: func(cipher-data: blob, associated-data: option<blob>, nonce: cipher-nonce, tag: cipher-tag) -> result<tuple<blob, option<blob>>>;
   }
 
-  record signature {
-    ed25519-signature: sixty-four-bytes,
-  }
+  resource sealing-secret {
+    from-random: static func() -> sealing-secret;
+    from-raw-bytes: static func(b: bytes) -> result<sealing-secret>;
 
-  resource HKDF {
-    constructor(secret: generic-secret);
-
-    compute-generic-secret: func(seed: string) -> generic-secret;
-    compute-cipher-secret: func(seed: string) -> cipher-secret;
-    compute-sealing-secret: func(seed: string) -> sealing-secret;
-    compute-signing-secret: func(seed: string) -> signing-secret;
-  }
-
-  resource cipher {
-    constructor(secret: cipher-secret);
-
-    encrypt: func(nonce: cipher-nonce, secret-data: bytes) -> result<tuple<cipher-tag, bytes>>;
-    decrypt: func(nonce: cipher-nonce, cipher-data: bytes, tag: cipher-tag) -> result<bytes>;
-    aead-encrypt: func(nonce: cipher-nonce, associated-data: bytes, secret-data: bytes) -> result<tuple<cipher-tag, bytes>>;
-    aead-decrypt: func(nonce: cipher-nonce, associated-data: bytes, cipher-data: bytes, tag: cipher-tag) -> result<bytes>;
-  }
-
-  resource sealer {
-    constructor(secret: sealing-secret);
-
+    clone: func() -> sealing-secret;
     as-share: func() -> sealing-share;
-    compute-shared-secret: func(partner: sealing-share) -> result<generic-secret>;
+
+    derive-common-secret: func(partner: borrow<sealing-share>) -> result<generic-secret>;
   }
 
-  resource signer {
-    constructor(secret: signing-secret);
+  resource signing-secret {
+    from-random: static func() -> signing-secret;
+    from-raw-bytes: static func(b: bytes) -> result<signing-secret>;
 
-    as-verifier: func() -> verifier;
-    identity: func() -> signing-identity;
-    sign: func(data: bytes) -> result<signature>;
-    verify: func(data: bytes, sig: signature) -> result;
-  }
+    clone: func() -> signing-secret;
+    as-identity: func() -> signing-identity;
+    as-sealing-secret: func() -> sealing-secret;
 
-  resource verifier {
-    constructor(identity: signing-identity);
-
-    verify: func(data: bytes, sig: signature) -> result;
+    sign: func(data: blob) -> result<tuple<blob, signature>>;
   }
 
   type secret-id = u32;
 
   resource key-ring {
-    put-generic: func(secret: generic-secret) -> result<secret-id>;
-    get-generic: func(id: secret-id) -> result<generic-secret>;
-    forget-generic: func(id: secret-id) -> result;
+    create-generic-secret: func(secret: borrow<generic-secret>, lease: lease-id) -> result<secret-id>;
+    recall-generic-secret: func(id: secret-id) -> result<generic-secret>;
+    forget-generic-secret: func(id: secret-id) -> result;
 
-    put-HKDF: func(secret: HKDF) -> result<secret-id>;
-    get-HKDF: func(id: secret-id) -> result<HKDF>;
-    forget-HKDF: func(id: secret-id) -> result;
+    create-cipher-secret: func(secret: borrow<cipher-secret>, lease: lease-id) -> result<secret-id>;
+    recall-cipher-secret: func(id: secret-id) -> result<cipher-secret>;
+    forget-cipher-secret: func(id: secret-id) -> result;
 
-    put-cipher: func(object: cipher) -> result<secret-id>;
-    get-cipher: func(id: secret-id) -> result<cipher>;
-    forget-cipher: func(id: secret-id) -> result;
+    create-sealing-secret: func(secret: borrow<sealing-secret>, lease: lease-id) -> result<secret-id>;
+    recall-sealing-secret: func(id: secret-id) -> result<sealing-secret>;
+    forget-sealing-secret: func(id: secret-id) -> result;
 
-    put-sealer: func(object: sealer) -> result<secret-id>;
-    get-sealer: func(id: secret-id) -> result<sealer>;
-    forget-sealer: func(id: secret-id) -> result;
-
-    put-signer: func(object: signer) -> result<secret-id>;
-    get-signer: func(id: secret-id) -> result<signer>;
-    forget-signer: func(id: secret-id) -> result;
+    create-signing-secret: func(secret: borrow<signing-secret>, lease: lease-id) -> result<secret-id>;
+    recall-signing-secret: func(id: secret-id) -> result<signing-secret>;
+    forget-signing-secret: func(id: secret-id) -> result;
   }
-
-  generate-generic-secret: func(len: u32) -> generic-secret;
-  generate-cipher-secret: func() -> cipher-secret;
-  generate-cipher-nonce: func() -> cipher-nonce;
-  generate-sealing-secret: func() -> sealing-secret;
-  generate-signing-secret: func() -> signing-secret;
 }

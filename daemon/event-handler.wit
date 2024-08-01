@@ -1,13 +1,12 @@
 interface event-handler {
-  use dandelion:common/values@0.1.0.{value-map};
-  use timers.{event-id};
+  use dandelion:common/types@0.1.0.{value-map};
 
   record load-event {
     configuration: value-map,
   }
 
   record tick-event {
-    id: event-id,
+    event-id: u32,
   }
 
   variant event {

@@ -1,10 +1,12 @@
 interface timers {
-  use dandelion:common/monotonic-clocks@0.1.0.{monotonic-duration, monotonic-instant};
-
-  type event-id = u32;
+  use dandelion:common/monotonic-clocks@0.1.0.{monotonic-instant};
 
   resource timer {
-    constructor(tick-at: monotonic-instant, id: event-id);
+    constructor(tick-at: monotonic-instant, event-id: u32);
+
+    tick-at: func() -> monotonic-instant;
+    event-id: func() -> u32;
     cancel: func() -> result;
+    force: func() -> result;
   }
 }

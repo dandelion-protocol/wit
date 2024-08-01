@@ -1,0 +1,153 @@
+interface types {
+  type bytes = list<u8>;
+
+  enum compare-result {
+    less-than,
+    equal-to,
+    greater-than,
+  }
+
+  resource blob {
+    constructor(data: bytes);
+
+    clone: func() -> blob;
+    intern: func();
+    len: func() -> u32;
+    data: func() -> bytes;
+
+    truncate: func(max-len: u32);
+    remove-prefix: func(max-prefix-len: u32);
+    remove-suffix: func(max-suffix-len: u32);
+    substring: func(i: u32, j: option<u32>) -> blob;
+
+    common-prefix-len: func(other: borrow<blob>) -> u32;
+    compare-to: func(other: borrow<blob>) -> compare-result;
+  }
+
+  record duration {
+    seconds: s64,
+    nanoseconds: u32,
+  }
+
+  record instant {
+    tai-seconds: s64,
+    tai-nanoseconds: u32,
+    utc-tai-seconds-delta: s32,
+  }
+
+  variant scalar-value {
+    bool-value(bool),
+    s8-value(s8),
+    s16-value(s16),
+    s32-value(s32),
+    s64-value(s64),
+    u8-value(u8),
+    u16-value(u16),
+    u32-value(u32),
+    u64-value(u64),
+    f32-value(f32),
+    f64-value(f64),
+    string-value(string),
+    bytes-value(bytes),
+    blob-value(blob),
+    duration-value(duration),
+    instant-value(instant),
+  }
+
+  variant list-value {
+    bool-list(list<bool>),
+    s8-list(list<s8>),
+    s16-list(list<s16>),
+    s32-list(list<s32>),
+    s64-list(list<s64>),
+    u8-list(list<u8>),
+    u16-list(list<u16>),
+    u32-list(list<u32>),
+    u64-list(list<u64>),
+    f32-list(list<f32>),
+    f64-list(list<f64>),
+    string-list(list<string>),
+    bytes-list(list<bytes>),
+    blob-list(list<blob>),
+    duration-list(list<duration>),
+    instant-list(list<instant>),
+  }
+
+  variant value {
+    nil-value,
+    scalar-value(scalar-value),
+    list-value(list-value),
+  }
+
+  variant value-map-conflict-resolution {
+    use-first-value,
+    use-last-value,
+    use-given-value(value),
+  }
+
+  enum value-map-concordance {
+    unique-to-self,
+    unique-to-other,
+    values-agree,
+    values-conflict,
+  }
+
+  record value-map-concordance-result {
+    keys: list<string>,
+    concordances: list<value-map-concordance>,
+  }
+
+  resource value-map {
+    empty: static func() -> value-map;
+
+    merge: static func(l: list<borrow<value-map>>, cr: value-map-conflict-resolution) -> value-map;
+    consistent-merge: static func(l: list<borrow<value-map>>) -> result<value-map>;
+
+    clone: func() -> value-map;
+    intern: func();
+
+    has-value: func(key: string) -> bool;
+    get-value: func(key: string) -> option<value>;
+
+    len: func() -> u32;
+    keys: func() -> list<string>;
+    keys-not-in: func(m: borrow<value-map>) -> list<string>;
+    keys-also-in: func(m: borrow<value-map>) -> list<string>;
+
+    least-key: func() -> option<string>;
+    least-key-after: func(key: string) -> option<string>;
+    greatest-key: func() -> option<string>;
+    greatest-key-before: func(key: string) -> option<string>;
+
+    concordance-with: func(other: borrow<value-map>) -> value-map-concordance-result;
+  }
+
+  resource mutable-value-map {
+    constructor();
+    new-with-capacity: func(hint: u32) -> mutable-value-map;
+
+    reset: func();
+    reset-with-capacity: func(hint: u32);
+    clone-from: func(source: borrow<mutable-value-map>);
+    clone-from-immutable: func(source: borrow<value-map>);
+    clone-from-with-additional-capacity: func(source: borrow<mutable-value-map>, hint: u32);
+    clone-from-immutable-with-additional-capacity: func(source: borrow<value-map>, hint: u32);
+
+    merge-from: func(source: borrow<mutable-value-map>, cr: value-map-conflict-resolution);
+    merge-from-immutable: func(source: borrow<value-map>, cr: value-map-conflict-resolution);
+    consistent-merge-from: func(source: borrow<mutable-value-map>) -> result;
+    consistent-merge-from-immutable: func(source: borrow<value-map>) -> result;
+
+    clone: func() -> mutable-value-map;
+    freeze: func() -> value-map;
+
+    has-value: func(key: string) -> bool;
+    get-value: func(key: string) -> option<value>;
+    pop-value: func(key: string) -> option<value>;
+    set-value: func(key: string, value: value);
+    set-value-if-absent: func(key: string, value: value) -> result;
+    set-value-if-present: func(key: string, value: value) -> result;
+    delete-value: func(key: string);
+    delete-value-if-present: func(key: string) -> result;
+  }
+}
